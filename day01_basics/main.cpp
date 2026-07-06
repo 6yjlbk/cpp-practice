@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <vector>
 
+using namespace std;
+
 double square(double x)
 {
     return x*x;
