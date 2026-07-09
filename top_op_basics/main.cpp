@@ -2,6 +2,8 @@
 #include <vector>
 #include <Eigen/SparseLU>
 #include <math.h>
+#include <cmath>
+#include <iomanip>
 using namespace Eigen;
 using namespace std;
 
@@ -139,9 +141,70 @@ vector<double> FE(int nelx, int nely, const vector<vector<double>>& x, double pe
     return U;
 }
 
-double check(int nelx, int nely, double rmin, const vector<vector<double>>& x)
+vector<vector<double>> check(int nelx, int nely, double rmin, const vector<vector<double>>& x, const vector<vector<double>>& dc)
 {
+    vector<vector<double>> dcn(nely, vector<double>(nelx, 0.0));
+    int r = static_cast<int>(round(rmin));
 
+    for (int i = 1; i <= nelx; i++)
+    {
+        for (int j = 1; j <= nely; j++)
+        {
+            double sum = 0.0;
+
+            for (int k = max(i - r, 1); k <= min(i + r, nelx); k++)
+            {
+                for (int l = max(j - r, 1); l <= min(j + r, nely); l++)
+                {
+                    double fac = rmin - sqrt(pow(i - k, 2) + pow(j - l, 2));
+                    double weight = max(0.0, fac);
+
+                    sum += weight;
+                    dcn[j - 1][i - 1] += weight * x[l - 1][k - 1] * dc[l - 1][k - 1];
+                }
+            }
+
+            dcn[j - 1][i - 1] /= x[j - 1][i - 1] * sum;
+        }
+    }
+
+    return dcn;
+}
+
+vector<vector<double>> OC(int nelx,int nely,const vector<vector<double>>& x,int volfrac, const vector<vector<double>>& dc)
+{
+    vector<vector<double>> xnew(nely, vector<double>(nelx, 0.0));
+    double l1=0; double l2=10000; double move =0.2;
+    while ((l2-l1)>1e-4)
+    {
+        double lmid = 0.5 * (l2 + l1);
+        double sumXnew = 0.0;
+        for (int ely = 0; ely < nely; ely++)
+        {
+            for (int elx = 0; elx < nelx; elx++)
+            {
+                double value = x[ely][elx] * sqrt(-dc[ely][elx] / lmid);
+
+                value = min(x[ely][elx] + move, value);
+                value = min(1.0, value);
+                value = max(x[ely][elx] - move, value);
+                value = max(0.001, value);
+
+                xnew[ely][elx] = value;
+                sumXnew += value;
+            }
+        }
+
+        if (sumXnew - volfrac * nelx * nely > 0.0)
+        {
+            l1 = lmid;
+        }
+        else
+        {
+            l2 = lmid;
+        } 
+    }
+    return xnew;
 }
 
 int main()
@@ -156,8 +219,10 @@ int main()
     vector<vector<double>> xold(nely, vector<double>(nelx,volfrac));
     int loop=0;
     double change=1.0;
+    double dc=0.0;
+    int maxIter = 100;
     // Start iteration
-    while (change > 0.01)
+    while (change > 0.01 && loop<=maxIter)
     {
         loop++;
         xold=x;
@@ -172,10 +237,46 @@ int main()
                 int n1=(nely+1)*(elx-1)+ely;
                 int n2=(nely+1)*elx + ely;
                 vector<int> edof = {2*n1-1, 2*n1, 2*n2-1, 2*n2, 2*n2+1, 2*n2+2, 2*n1+1, 2*n1+2};
-                vector<double> Ue = U{2*n1-1, 2*n1, 2*n2-1, 2*n2, 2*n2+1, 2*n2+2, 2*n1+1, 2*n1+2};
-                double c = pow(x(ely,elx),penal-1)*Ue'*KE*Ue;
+                vector<double> Ue(8);
+                for (int i =0; i<8; i++)
+                {
+                    Ue[i]=U[edof[i]-1];
+                }
+                double UeKEUe=0.0;
+                for (int i = 0; i < 8; i++) 
+                {
+                for (int j = 0; j < 8; j++)
+                {
+                    UeKEUe += Ue[i] * KE[i][j] * Ue[j];
+                }
+                }
+                double xval = x[ely - 1][elx - 1];
+                c += pow(xval, penal) * UeKEUe;
+                dc[ely - 1][elx - 1] = -penal * pow(xval, penal - 1.0) * UeKEUe;
             }
          }
+        dc =check(nelx,nely,rmin,x,dc);
+        x=OC(nelx,nely,x,volfrac,dc);
+
+        change = 0.0;
+        double sumX = 0.0;
+
+        for (int ely = 0; ely < nely; ely++)
+        {
+            for (int elx = 0; elx < nelx; elx++)
+            {
+                change = max(change, abs(x[ely][elx] - xold[ely][elx]));
+                sumX += x[ely][elx];
+            }
+        }
+
+        double volume = sumX / (nelx * nely);
+
+        cout << " It.: " << setw(4) << loop
+            << " Obj.: " << setw(10) << fixed << setprecision(4) << c
+            << " Vol.: " << setw(6) << fixed << setprecision(3) << volume
+            << " ch.: " << setw(6) << fixed << setprecision(3) << change
+            << endl;
     }
 
     return 0;
