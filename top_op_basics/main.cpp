@@ -1,9 +1,10 @@
-#include <iostream>
+﻿#include <iostream>
 #include <vector>
-#include <Eigen/SparseLU>
 #include <math.h>
 #include <cmath>
 #include <iomanip>
+#include <algorithm>
+#include <Eigen/SparseLU>
 using namespace Eigen;
 using namespace std;
 
@@ -24,6 +25,7 @@ vector<vector<double>> lk()
     };
     return KE;
 }
+
 
 vector<double> solveLinearSystem(vector<vector<double>> A, vector<double> b)
 {
@@ -257,7 +259,6 @@ int main()
          }
         dc =check(nelx,nely,rmin,x,dc);
         x=OC(nelx,nely,x,volfrac,dc);
-
         change = 0.0;
         double sumX = 0.0;
 
@@ -281,3 +282,4 @@ int main()
 
     return 0;
 }
+
