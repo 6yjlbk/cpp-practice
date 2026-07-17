@@ -39,7 +39,34 @@ public:
     {
         return num;
     };
+    virtual double cost()
+    {
+
+    };
 };
+
+class StanrdPackage: public Package{
+public:
+    double cost() override
+    {
+
+    };
+};
+class ExpressPackage: public Package{
+public:
+    double cost() override
+    {
+
+    };
+};
+class FragilePackage: public Package{
+public:
+double cost() override
+    {
+
+    };
+};
+
 
 int Package::num =0;
 
