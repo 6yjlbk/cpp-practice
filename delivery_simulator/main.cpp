@@ -74,7 +74,7 @@ int Package::num =0;
 int main()
 {
     StandardPackage package ("Ann",2.5);
-    StandardPackage package2("Max",123);
+    ExpressPackage package2("Max",123);
     package.PrintInfo();
     package2.PrintInfo();
     package.GetID();
