@@ -4,10 +4,10 @@ using namespace std;
 class Package
 {
     int id;
-    double weight;
     string status, name;
     static int num;
 public:
+    double weight, price;
     Package(string const  &name, double weight)
     {
         if (weight <0)
@@ -39,31 +39,31 @@ public:
     {
         return num;
     };
-    virtual double cost()
-    {
-
-    };
+    virtual double cost(double weight) =0;
 };
 
-class StanrdPackage: public Package{
+class StandardPackage: public Package{
 public:
-    double cost() override
+    using Package::Package;
+    double cost(double weight) override
     {
-
+        price=weight*100;
     };
 };
 class ExpressPackage: public Package{
 public:
-    double cost() override
+    using Package::Package;
+    double cost(double weight) override
     {
-
+        price=weight*180+300;
     };
 };
 class FragilePackage: public Package{
 public:
-double cost() override
+    using Package::Package;
+    double cost(double weight) override
     {
-
+        price=weight*150+200;
     };
 };
 
@@ -73,8 +73,8 @@ int Package::num =0;
 
 int main()
 {
-    Package package("Ann",2.5);
-    Package package2("Max",123);
+    StandardPackage package ("Ann",2.5);
+    StandardPackage package2("Max",123);
     package.PrintInfo();
     package2.PrintInfo();
     package.GetID();
