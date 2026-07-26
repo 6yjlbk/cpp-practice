@@ -32,38 +32,43 @@ public:
     };
     void PrintInfo()
     {
-        cout<<"Number of packages: "<< num<<"\nID: "<<id<<"\nName: "<<name<<"\nWeight of packages, kg: "<<weight<<"\nStatus: "<<status<<endl;
+        cout<<"Number of packages: "<< num<<"\nID: "<<id<<"\nName: "<<name<<"\nWeight of packages, kg: "<<weight<<"\nStatus: "<<status<<"\nCost: "<<Package::price<<endl;
         cout <<"_______________________________________"<<endl;
     };
     int GetID()
     {
         return num;
     };
-    virtual double cost(double weight) =0;
+    virtual double cost() =0;
 };
 
 class StandardPackage: public Package{
 public:
     using Package::Package;
-    double cost(double weight) override
+    double cost() override
     {
         price=weight*100;
+        return price;
     };
 };
+
 class ExpressPackage: public Package{
 public:
     using Package::Package;
-    double cost(double weight) override
+    double cost() override
     {
         price=weight*180+300;
+        return price;
     };
 };
+
 class FragilePackage: public Package{
 public:
     using Package::Package;
-    double cost(double weight) override
+    double cost() override
     {
         price=weight*150+200;
+        return price;
     };
 };
 
