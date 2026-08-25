@@ -1,21 +1,15 @@
 #include <iostream>
 #include <vector>
+#include <cmath>
+#include <stdexcept>
 using namespace std;
-
-class Element {
-public:
-    int elem_id;
-    Element(int elem_id){
-        this->elem_id=elem_id;
-    };
-};
 
 class Node {
 public:
     int node_id;
     double x, y, force_x, force_y;
     bool constr_x, constr_y;
-    Node (int const node_id,double const x, double const y, double const force_x, double const force_y, bool const constr_x, bool const constr_y){
+    Node (int node_id, double x, double y, double force_x, double force_y, bool constr_x, bool constr_y){
         this->node_id=node_id;
         this->x=x;
         this->y=y;
@@ -26,18 +20,32 @@ public:
     };
 };
 
+class Element {
+public:
+    int elem_id;
+    Element(int elem_id){
+        this->elem_id=elem_id;
+    };
+};
 
 class RodElement: public Element {
     public:
     int first_node_id, second_node_id;
     double E,A;
-    RodElement(int const elem_id, int const first_node_id,int const second_node_id, double const E, double const A) : Element(elem_id)
+    RodElement(int elem_id, int first_node_id,int second_node_id, double E, double A) : Element(elem_id)
     {
         this->first_node_id=first_node_id;
         this->second_node_id=second_node_id;
         this->E=E;
         this->A=A;
     };
+    double calculate_length (const Node& first_node, const Node& second_node) const
+    {
+        double dx = second_node.x - first_node.x;
+        double dy = second_node.y - first_node.y;
+        double length = sqrt(dx * dx + dy * dy);
+        return length;
+    }
 };
 
 class Model {
@@ -53,7 +61,20 @@ class Model {
     {
         elements.push_back(element);
     };
-    void print() const
+
+    const Node& getNodeByID(int id) const
+    {
+        for (const Node& node: this->nodes)
+        {
+            if (node.node_id == id)
+            {  
+                return node;
+            }
+        }
+        throw runtime_error("Node not found");
+    };
+
+     void print() const
     {
         if (!nodes.empty())
         {
@@ -63,17 +84,20 @@ class Model {
             cout<<"\nID:"<<node.node_id<<"\nX_coordinate:"<<node.x<<"\nY_coordinate:"<<node.y<<"\nForce_x:"<<node.force_x<<"\nForce_y:"<<node.force_y<<"\nConstrain_x:"<<node.constr_x<<"\nConstrain_y:"<<node.constr_y<<endl;
         }   
         }
-        if (!nodes.empty())
+
+        if (!elements.empty())
         {
             cout<<"\nElements properties:"<<endl;
             for (const RodElement& element : elements)
         {
             cout<<"\nID:"<<element.elem_id<<"\nFirst_node:"<<element.first_node_id<<"\nSecond_node:"<<element.second_node_id<<"\nE:"<<element.E<<"\nA:"<<element.A<<endl;
+            const Node& first_node = getNodeByID(element.first_node_id);
+            const Node& second_node = getNodeByID(element.second_node_id);
+            cout<<"\nLength: "<<element.calculate_length(first_node, second_node)<<endl;
         }
-        }
-        
-        
+        } 
     };
+
 };
 
 int main()
