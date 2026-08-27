@@ -46,6 +46,23 @@ class RodElement: public Element {
         double length = sqrt(dx * dx + dy * dy);
         return length;
     }
+    vector<vector<double>> calculate_k_l (const Node& first_node, const Node& second_node) const
+    {
+        double length=calculate_length(first_node, second_node);
+        if (length <= 0)
+        {
+            throw runtime_error("Rod element has zero length");
+        }
+        vector<vector<double>> k_l(2,vector<double>(2));
+        for (int i=0; i<=1; i++)
+        {
+            for (int j=0; j<=1; j++)
+            {
+                k_l[i][j]=pow(-1,i+j)*E*A/length;
+            }
+        }
+        return k_l;
+    }
 };
 
 class Model {
@@ -94,8 +111,18 @@ class Model {
             const Node& first_node = getNodeByID(element.first_node_id);
             const Node& second_node = getNodeByID(element.second_node_id);
             cout<<"\nLength: "<<element.calculate_length(first_node, second_node)<<endl;
+            vector<vector<double>> k_l =element.calculate_k_l(first_node, second_node);
+            cout <<"Local stiffness matrix:" <<endl;
+            for (const vector<double>& row : k_l)
+            {
+                for (double value : row)
+                {
+                    cout<<value<<" ";   
+                }
+                cout <<endl;
+            }
         }
-        } 
+        }
     };
 
 };
