@@ -70,6 +70,9 @@ class Model {
     vector<Node> nodes;
     vector<RodElement> elements;
     public:
+    size_t size=nodes.size();
+
+
     void addNode(const Node& node)
     {
         nodes.push_back(node);
@@ -93,7 +96,7 @@ class Model {
 
     size_t getNodeIndexByID (int id) const
     {
-        for (size_t i=0; i<nodes.size(); i++)
+        for (size_t i=0; i<size; i++)
         {
             if (nodes[i].node_id == id)
             {  
@@ -105,8 +108,7 @@ class Model {
 
     vector<vector<double>> calculate_K() const
     {
-        size_t matrix_size=nodes.size();
-        vector<vector<double>> K(matrix_size,vector<double>(matrix_size));
+        vector<vector<double>> K(size,vector<double>(size));
         for (const RodElement& element: elements){
             const Node& first_node=getNodeByID(element.first_node_id);
             const Node& second_node=getNodeByID(element.second_node_id);
@@ -120,6 +122,16 @@ class Model {
         }
 
         return K;
+    }
+
+    vector<double> calculate_F() const
+    {
+        vector<double> F(size);
+        for (size_t i=0; i<size; i++)
+        {
+            F[i]=nodes[i].force_x;
+        }
+        return F;
     }
 
      void print() const
@@ -153,7 +165,7 @@ class Model {
                 cout <<endl;
             }
         }
-        vector<vector<double>> K =calculate_K();
+            vector<vector<double>> K =calculate_K();
             cout <<"Global stiffness matrix:" <<endl;
             for (const vector<double>& row : K)
             {
@@ -163,8 +175,16 @@ class Model {
                 }
                 cout <<endl;
             }
+            vector<double> F=calculate_F();
+            cout<<"Force vector:"<<endl;
+            for (const double value: F)
+            {
+                cout<<value<<" ";  
+            }
+            cout<<endl;
 
         }
+        
     };
 
 };
