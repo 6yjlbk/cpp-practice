@@ -70,9 +70,6 @@ class Model {
     vector<Node> nodes;
     vector<RodElement> elements;
     public:
-    size_t size=nodes.size();
-
-
     void addNode(const Node& node)
     {
         nodes.push_back(node);
@@ -96,7 +93,7 @@ class Model {
 
     size_t getNodeIndexByID (int id) const
     {
-        for (size_t i=0; i<size; i++)
+        for (size_t i=0; i<nodes.size(); i++)
         {
             if (nodes[i].node_id == id)
             {  
@@ -108,7 +105,8 @@ class Model {
 
     vector<vector<double>> calculate_K() const
     {
-        vector<vector<double>> K(size,vector<double>(size));
+        size_t matrix_size=nodes.size();
+        vector<vector<double>> K(matrix_size,vector<double>(matrix_size));
         for (const RodElement& element: elements){
             const Node& first_node=getNodeByID(element.first_node_id);
             const Node& second_node=getNodeByID(element.second_node_id);
@@ -126,8 +124,10 @@ class Model {
 
     vector<double> calculate_F() const
     {
-        vector<double> F(size);
-        for (size_t i=0; i<size; i++)
+        
+        size_t vector_size=nodes.size();
+        vector<double> F(vector_size);
+        for (size_t i=0; i<vector_size; i++)
         {
             F[i]=nodes[i].force_x;
         }
