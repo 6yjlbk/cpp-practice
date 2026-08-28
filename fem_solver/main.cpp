@@ -81,7 +81,7 @@ class Model {
 
     const Node& getNodeByID(int id) const
     {
-        for (const Node& node: this->nodes)
+        for (const Node& node: nodes)
         {
             if (node.node_id == id)
             {  
@@ -90,6 +90,37 @@ class Model {
         }
         throw runtime_error("Node not found");
     };
+
+    size_t getNodeIndexByID (int id) const
+    {
+        for (size_t i=0; i<nodes.size(); i++)
+        {
+            if (nodes[i].node_id == id)
+            {  
+                return i;
+            }
+        }
+        throw runtime_error("Node index not found");
+    }
+
+    vector<vector<double>> calculate_K() const
+    {
+        size_t matrix_size=nodes.size();
+        vector<vector<double>> K(matrix_size,vector<double>(matrix_size));
+        for (const RodElement& element: elements){
+            const Node& first_node=getNodeByID(element.first_node_id);
+            const Node& second_node=getNodeByID(element.second_node_id);
+            vector<vector<double>> k_l=element.calculate_k_l(first_node,second_node);
+            size_t first_index = getNodeIndexByID(element.first_node_id);
+            size_t second_index = getNodeIndexByID(element.second_node_id);
+            K[first_index][first_index]+=k_l[0][0];
+            K[first_index][second_index]+=k_l[0][1];
+            K[second_index][first_index]+=k_l[1][0];
+            K[second_index][second_index]+=k_l[1][1];
+        }
+
+        return K;
+    }
 
      void print() const
     {
@@ -122,6 +153,17 @@ class Model {
                 cout <<endl;
             }
         }
+        vector<vector<double>> K =calculate_K();
+            cout <<"Global stiffness matrix:" <<endl;
+            for (const vector<double>& row : K)
+            {
+                for (double value : row)
+                {
+                    cout<<value<<" ";   
+                }
+                cout <<endl;
+            }
+
         }
     };
 
