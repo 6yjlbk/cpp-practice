@@ -2,6 +2,7 @@
 #include <vector>
 #include <cmath>
 #include <stdexcept>
+#include <utility>
 using namespace std;
 
 class Node {
@@ -134,6 +135,95 @@ class Model {
         return F;
     }
 
+    void apply_bc(vector<vector<double>>& K, vector<double>& F) const
+    {
+        for (size_t i=0; i<nodes.size();i++)
+        {
+            if (nodes[i].constr_x == true)
+            {  
+                F[i]=0;
+                for (size_t j=0;j<nodes.size();j++)
+                {
+                    K[i][j]=0;
+                    K[j][i]=0;
+                }
+                K[i][i]=1;
+            }
+        }
+    }
+
+     vector<double> matrix_solver (vector<vector<double>> K,vector<double> F) const // Gauss
+    {
+        size_t system_size=F.size();
+        if (system_size == 0)
+        {
+            throw runtime_error ("System is empty");
+        }
+        if (K.size() != system_size)
+        {
+            throw runtime_error("Matrix and vector don't match");
+        }
+        for (const vector<double>& row : K)
+        {
+            if (row.size() != system_size)
+            {
+                throw runtime_error("Matrix is not a sqaure");
+            }
+        }
+        
+        for (size_t pivot=0; pivot <system_size; pivot++)
+        {
+            size_t pivot_row = pivot;
+            double maximum_value = abs(K[pivot][pivot]);
+
+            for (size_t row=pivot +1; row< system_size; row++)
+            {
+                double candidate=abs(K[row][pivot]);
+                if (candidate > maximum_value)
+                {
+                    maximum_value=candidate;
+                    pivot_row=row;
+                }
+            }
+            if (maximum_value < 1e-12)
+            {
+                throw runtime_error("Stiffness matrix is singular");
+            }
+            if (pivot_row != pivot)
+            {
+                swap(K[pivot], K[pivot_row]);
+                swap(F[pivot], F[pivot_row]);
+            }
+
+            for (size_t row = pivot + 1; row < system_size; row++)
+            {
+                double factor = K[row][pivot] / K[pivot][pivot];
+
+                K[row][pivot] = 0.0;
+
+                for (size_t column = pivot + 1; column < system_size; column++)
+                {
+                    K[row][column] = K[row][column] - factor * K[pivot][column];
+                }
+
+                F[row] = F[row] - factor * F[pivot];
+            }
+        }
+        vector<double> U(system_size);
+        for (size_t reverse_index = system_size; reverse_index > 0; reverse_index --)
+        {
+            size_t row = reverse_index -1;
+            double right_side = F[row];
+            for (size_t column = row +1; column < system_size; column++)
+            {
+                right_side = right_side - K[row][column]*U[column];
+            }
+            U[row] = right_side / K[row][row];
+        }
+        return U;
+    }
+
+
      void print() const
     {
         if (!nodes.empty())
@@ -183,9 +273,30 @@ class Model {
             }
             cout<<endl;
 
+            apply_bc(K,F);
+            vector<double> U=matrix_solver(K,F);
+            cout <<"Global stiffness matrix after bc:" <<endl;
+            for (const vector<double>& row : K)
+            {
+                for (double value : row)
+                {
+                    cout<<value<<" ";   
+                }
+                cout <<endl;
+            }
+            cout<<"Force vector after bc:"<<endl;
+            for (const double value: F)
+            {
+                cout<<value<<" ";  
+            }
+            cout<<endl;
+            cout <<"Node displacements:"<<endl;
+            for (size_t i=0;i<U.size();i++)
+            {
+                cout<<"Node"<<nodes[i].node_id<<":"<<U[i]<<endl;
+            }
         }
-        
-    };
+    }
 
 };
 
