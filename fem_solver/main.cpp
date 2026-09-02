@@ -64,6 +64,27 @@ class RodElement: public Element {
         }
         return k_l;
     }
+    double calculate_extension(double first_displacement, double second_displacement) const
+    {
+        return second_displacement-first_displacement;
+    }
+
+    struct RodResults {double length; double extension; double strain; double stress; double normal_force;};
+
+    RodResults calculate_results(const Node& first_node, const Node& second_node, double first_displacement, double second_displacement) const
+    {
+        RodResults results;
+        results.length = calculate_length(first_node, second_node);
+        if (results.length <= 0.0)
+        {
+            throw runtime_error("Rod element has zero length");
+        }
+        results.extension=calculate_extension(first_displacement, second_displacement);
+        results.strain = results.extension/results.length;
+        results.stress=results.strain*E;
+        results.normal_force=results.stress*A;
+        return results;
+    }
 };
 
 class Model {
@@ -224,6 +245,22 @@ class Model {
     }
 
 
+    vector<double> calculate_R (const vector<vector<double>>& K, const vector<double>& U, const vector<double>& F) const
+    {
+        vector<double> R (nodes.size());
+        for (size_t i=0; i<nodes.size();i++)
+        {
+            double internal_force=0;
+            for (size_t j=0; j<nodes.size();j++)
+            {
+                internal_force+=K[i][j]*U[j];
+            }
+            R[i]=internal_force-F[i];
+        }
+        return R;
+    }
+
+
      void print() const
     {
         if (!nodes.empty())
@@ -237,6 +274,8 @@ class Model {
 
         if (!elements.empty())
         {
+            vector<vector<double>> K_original=calculate_K();
+            vector<double> F_original=calculate_F();
             cout<<"\nElements properties:"<<endl;
             for (const RodElement& element : elements)
         {
@@ -272,7 +311,6 @@ class Model {
                 cout<<value<<" ";  
             }
             cout<<endl;
-
             apply_bc(K,F);
             vector<double> U=matrix_solver(K,F);
             cout <<"Global stiffness matrix after bc:" <<endl;
@@ -294,6 +332,24 @@ class Model {
             for (size_t i=0;i<U.size();i++)
             {
                 cout<<"Node"<<nodes[i].node_id<<":"<<U[i]<<endl;
+            }
+            vector<double> R =calculate_R(K_original,U,F_original);
+            cout <<"Node reactions:"<<endl;
+            for (size_t i=0;i<U.size();i++)
+            {
+                cout<<"Node"<<nodes[i].node_id<<":"<<R[i]<<endl;
+            }
+            cout<<"Element Results:"<<endl;
+            for (const RodElement& element : elements)
+            {
+                size_t first_index=getNodeIndexByID(element.first_node_id);
+                size_t second_index=getNodeIndexByID(element.second_node_id);
+                const Node& first_node = getNodeByID(element.first_node_id);
+                const Node& second_node = getNodeByID(element.second_node_id);
+                double first_displacement=U[first_index];
+                double second_displacement=U[second_index];
+                RodElement::RodResults results=element.calculate_results(first_node,second_node,first_displacement,second_displacement);
+                cout<<"Element ID: "<<element.elem_id<<endl<<"Length: "<<results.length<<endl<<"Extension: "<<results.extension<<endl<<"Strain: "<<results.strain<<endl<<"Stress: "<<results.stress<<endl<<"Normal force: "<<results.normal_force<<endl;
             }
         }
     }
