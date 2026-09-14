@@ -9,10 +9,9 @@
 using namespace std;
 
 /*
-cd D:\Git\cpp-practice\fem_solver
-g++ -std=c++20 -Wall -Wextra -Wpedantic -g main.cpp Node.cpp Element.cpp -o fem_solver.exe
+g++ -std=c++20 -Wall -Wextra -Wpedantic main.cpp Node.cpp Element.cpp RodElement.cpp -o fem_solver.exe
 .\fem_solver.exe
-*/ 
+*/
 
 
 class Model {
