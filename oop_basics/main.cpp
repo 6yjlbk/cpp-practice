@@ -47,4 +47,5 @@ int main()
     {
         std::cout<<id <<std::endl; //set обходится в порядке ключей.
     }
+    
 }
