@@ -5,6 +5,8 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <random>
+
 int main()
 {
     // Контейнер map - ключ - значение
@@ -75,7 +77,6 @@ int main()
         std::cout <<name<<" "<<num<<std::endl;
     }
 
-
     // Контейнер multiset - несколько значений ключа
     std::cout<<"-----MULTISET-----"<<std::endl;
     std::multiset<double> dnums;
@@ -96,9 +97,45 @@ int main()
     {
         std::cout<<num<<" ";
     }
-    
+
     // Контейнер unordered_map
-
-
+    std::cout<<"\n-----UNORDERED_MAP-----"<<std::endl;
+    std::unordered_map<std::string, double> noname ={{"a",12.2},{"c", 0.43},{"b",1.54},{"fd",3}};
+    for (const auto& [name,num] : noname)
+    {
+        std::cout<<name<<" "<<num<<std::endl; // порядок не регламентируется и зависит от работы самого контейнера
+    }
     
+    // Оценка скорости работы
+    std::cout<<"work time estimation"<<std::endl;
+    std::unordered_map<int, int> rndm_umap;
+    std::unordered_map<int, int> rndm1_umap;
+    std::map<int,int> rndm_map;
+    rndm_umap.reserve(3000); //подготавливаются места, но не создаются элементы
+    rndm1_umap.reserve(3000);
+    std::mt19937 gen(std::random_device{}()); //инициализация генератора, который производит случайные числа, random_device нужен чтобы менять значения перед каждым запуском
+    std::uniform_int_distribution<int> dist(0,8000); //распределение чисел по нужном правилу в заданном диапазоне 
+    for (int i=0; i<3000;++i)
+    {
+        rndm_umap.emplace(i,dist(gen)); // добавляет пару ключ-случайно число
+        rndm1_umap.emplace(dist(gen),dist(gen));
+        rndm_map.emplace(i,dist(gen));
+    }
+    auto itt1=rndm_umap.find(1143);
+    std::cout<<itt1->first<<" "<<itt1->second<<std::endl;
+    auto itt2=rndm_map.find(1143);
+    std::cout<<itt2->first<<" "<<itt2->second<<std::endl;
+    auto itt3=rndm1_umap.find(1143);
+    if (itt3 != rndm1_umap.end())
+    {
+        std::cout<<itt3->first<<' '<<itt3->second<< std::endl;
+    }
+    else
+    {
+        std::cout<<"No subject"<< std::endl;
+    }
+    
+
+
+
 }
