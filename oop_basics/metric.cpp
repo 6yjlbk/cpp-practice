@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
+#include "metric.h"
 
 using Clock = std::chrono::steady_clock; //задание имени Clock для пространства имен (?)
 
@@ -56,80 +57,24 @@ void PrintMap(const Container& container)
     }
 }
 
-// шаблон для поиска ключа для вектора
-template <typename T>
-bool containsKey(const std::vector<T>& container, const T& key)
-{
-    return std::find(container.begin(), container.end(), key)!=container.end();
-}
-
-// шаблон для поиска ключа для остальных контейнеров 
-template <typename Container, typename Key>
-bool containsKey(const Container& container, const Key& key)
-{
-    return container.find(key)!=container.end();
-}
-
-// шаблон для инициализации vector
-template <typename T>
-void  initContainer(std::vector<T>& container, const T& key)
-{
-    container.push_back(key);
-}
-
-// шаблон для инициализации set
-template <typename S>
-void  initContainer(std::set<S>& container, const S& key)
-{
-    container.insert(key);
-}
-
-// шаблон для инициализации unordered_set
-template <typename T>
-void initContainer(std::unordered_set<T>& container, const T& key)
-{
-    container.insert(key);
-}
-
-// шаблон для инициализации map / unordered_map
-template <typename Container, typename Key>
-void  initContainer(Container& container, const Key& key)
-{
-    container.emplace(key,key*10);
-}
-
 
 struct Metrics
 {
-    static constexpr int N = 3000; //константа, которая известна в момент компиляции, менять нельзя; static - значение относится ко всей структуре
     int hits=0;
     double time=0;
-    Metrics(auto& container, const std::vector<int>& queiries)
+    Metrics(const auto& container, const std::vector<int>& queiries, auto search)
     {
-        //начальная инициализация
-        std::vector<int> data(N);
-        std::iota(data.begin(), data.end(), 0); //заполнение вектора data 0..2999
-        std::mt19937 gen(10); //10 - произвольное число, которое задает начальное состояние генератора
-        std::shuffle(data.begin(),data.end(),gen); //перемешивание. gen нужен для того, чтобы выбрать, как переставить уже имеющиеся элементы
-        for (int key:data)
-        {
-            initContainer(container,key);
-        }
         //вычисление метрик
-        auto start=Clock::now();
+        const auto start=Clock::now();
         for (int key : queiries)
-        if (containsKey(container,key)) //у вектора нет метода .find(), есть только std::find
-        {
+        if (search(container,key)) //у вектора нет метода .find(), есть только std::find
+        {   
             ++hits; //количество успешных поисков +1
         }
-        auto finish=Clock::now();
+        const auto finish=Clock::now();
         time=std::chrono::duration<double, std::milli>(finish-start).count(); // вычисление времени работы в мс, формат double
     }
 };
-
-
-
-
 
 int main()
 {
@@ -170,41 +115,20 @@ int main()
         queiries.push_back(dist(gen));
     }
 
-    // анализ
-
-    int hits = 0; // число успешных поисков
-
-    auto start = Clock::now();
-
-    for (int key : queiries)
-    {
-        if (std::find(linear.begin(), linear.end(),key) !=linear.end()) //у вектора нет метода .find(), есть только std::find
-        {
-            ++hits; //количество успешных поисков +1
-        }
-    }
+    // Запуск анализа
     
-    auto finish=Clock::now();
-    double time=std::chrono::duration<double, std::milli>(finish-start).count(); // вычисление времени работы в мс, формат double
-    // std::cout<<"\nTime: "<<time<<" ms; Num of hits: "<<hits<<std::endl;
-    
-    Metrics test1 (linear,queiries);
-    Metrics test2 (sorted,queiries);
-    Metrics test3 (mtree,queiries);
-    Metrics test4 (mhash,queiries);
+    Metrics test1 (linear,queiries,LinearSearch);
+    Metrics test2 (sorted,queiries,BinarySearch);
+    Metrics test3 (mtree,queiries,AssociativeSearch);
+    Metrics test4 (mhash,queiries,AssociativeSearch);
+    Metrics test5 (stree,queiries,AssociativeSearch);
+    Metrics test6 (shash,queiries,AssociativeSearch);
     std::cout<<"Nime of hits: "<<test1.hits<<"; Time: "<<test1.time<<" ms"<<std::endl;
     std::cout<<"Nime of hits: "<<test2.hits<<"; Time: "<<test2.time<<" ms"<<std::endl;
     std::cout<<"Nime of hits: "<<test3.hits<<"; Time: "<<test3.time<<" ms"<<std::endl;
     std::cout<<"Nime of hits: "<<test4.hits<<"; Time: "<<test4.time<<" ms"<<std::endl;
+    std::cout<<"Nime of hits: "<<test5.hits<<"; Time: "<<test5.time<<" ms"<<std::endl;
+    std::cout<<"Nime of hits: "<<test6.hits<<"; Time: "<<test6.time<<" ms"<<std::endl;
 
-    // RandInit(linear);
-    // RandInit(sorted);
-    // RandInit(stree);
-    // RandInit(shash);
-    // RandInitMap(mtree);
-    // RandInitMap(mhash);
-    //Print(linear);
-    //Print(stree);
-    //PrintMap(mtree);
 
 }
