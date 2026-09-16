@@ -35,7 +35,8 @@ void RandInitMap(Container& container)
     }
 }
 
-template <typename Container> // шаблонная функция для вывода контейнеров, где нет ключа
+// шаблон  для вывода контейнеров, где нет ключа
+template <typename Container>
 void Print(const Container& container)
 {
     for (const auto& num : container)
@@ -45,7 +46,8 @@ void Print(const Container& container)
     std::cout << '\n';
 }
 
-template <typename Container> //шаблонная функция для контейнров типо map, multimap, unordered_map, unordered_multimap
+//Шаблон для контейнров типо map, multimap, unordered_map, unordered_multimap
+template <typename Container>
 void PrintMap(const Container& container)
 {
     for (const auto& [key, value] : container )
@@ -68,12 +70,52 @@ bool containsKey(const Container& container, const Key& key)
     return container.find(key)!=container.end();
 }
 
+// шаблон для инициализации vector
+template <typename T>
+void  initContainer(std::vector<T>& container, const T& key)
+{
+    container.push_back(key);
+}
+
+// шаблон для инициализации set
+template <typename S>
+void  initContainer(std::set<S>& container, const S& key)
+{
+    container.insert(key);
+}
+
+// шаблон для инициализации unordered_set
+template <typename T>
+void initContainer(std::unordered_set<T>& container, const T& key)
+{
+    container.insert(key);
+}
+
+// шаблон для инициализации map / unordered_map
+template <typename Container, typename Key>
+void  initContainer(Container& container, const Key& key)
+{
+    container.emplace(key,key*10);
+}
+
+
 struct Metrics
 {
+    static constexpr int N = 3000; //константа, которая известна в момент компиляции, менять нельзя; static - значение относится ко всей структуре
     int hits=0;
     double time=0;
-    Metrics(const auto& container, const std::vector<int>& queiries)
+    Metrics(auto& container, const std::vector<int>& queiries)
     {
+        //начальная инициализация
+        std::vector<int> data(N);
+        std::iota(data.begin(), data.end(), 0); //заполнение вектора data 0..2999
+        std::mt19937 gen(10); //10 - произвольное число, которое задает начальное состояние генератора
+        std::shuffle(data.begin(),data.end(),gen); //перемешивание. gen нужен для того, чтобы выбрать, как переставить уже имеющиеся элементы
+        for (int key:data)
+        {
+            initContainer(container,key);
+        }
+        //вычисление метрик
         auto start=Clock::now();
         for (int key : queiries)
         if (containsKey(container,key)) //у вектора нет метода .find(), есть только std::find
@@ -84,6 +126,8 @@ struct Metrics
         time=std::chrono::duration<double, std::milli>(finish-start).count(); // вычисление времени работы в мс, формат double
     }
 };
+
+
 
 
 
@@ -145,7 +189,7 @@ int main()
     // std::cout<<"\nTime: "<<time<<" ms; Num of hits: "<<hits<<std::endl;
     
     Metrics test1 (linear,queiries);
-    Metrics test2(sorted,queiries);
+    Metrics test2 (sorted,queiries);
     Metrics test3 (mtree,queiries);
     Metrics test4 (mhash,queiries);
     std::cout<<"Nime of hits: "<<test1.hits<<"; Time: "<<test1.time<<" ms"<<std::endl;
